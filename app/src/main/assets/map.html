@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    html,body,#map{height:100%;margin:0}
+    body{font-family:system-ui,sans-serif}
+    .tram-marker{
+      background:white;border:2px solid #222;border-radius:18px;
+      min-width:30px;height:30px;line-height:26px;text-align:center;
+      font-weight:700;box-shadow:0 1px 4px #777
+    }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([54.735, 55.97], 13);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+let markers = [];
+
+function setVehicles(list) {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+  const bounds = [];
+
+  list.forEach(v => {
+    const lat = Number(v.u_lat), lon = Number(v.u_long);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="tram-marker">${v.mr_num}</div>`,
+      iconSize: [34,34],
+      iconAnchor: [17,17]
+    });
+
+    const m = L.marker([lat, lon], {icon})
+      .addTo(map)
+      .bindPopup(
+        `<b>Трамвай №${v.mr_num}</b><br>` +
+        `Вагон ${v.u_garagnum}<br>` +
+        `${v.u_model || ''}<br>` +
+        `${v.u_speed} км/ч<br>` +
+        `${v.rl_firststation_title} → ${v.rl_laststation_title}<br>` +
+        `Навигация: ${v.u_timenav}`
+      );
+    markers.push(m);
+    bounds.push([lat,lon]);
+  });
+
+  if (bounds.length) {
+    map.fitBounds(bounds, {padding:[35,35], maxZoom:14});
+  }
+}
+</script>
+</body>
+</html>
